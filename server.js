@@ -2,17 +2,25 @@ const express = require('express');
 const fetch = require('node-fetch');
 const cors = require('cors');
 
+// Load .env file locally (Render handles environment variables automatically)
+require('dotenv').config();
+
 const app = express();
 app.use(express.json());
 app.use(cors());
 
-// MTN Sandbox Configuration variables pulled securely from Render Environment Variables
+// MTN Sandbox Configuration variables pulled securely from Environment Variables
 const SUBSCRIPTION_KEY = process.env.MOMO_PRIMARY_KEY;
 const API_USER = process.env.MOMO_API_USER;
 const API_KEY = process.env.MOMO_API_KEY;
 const TARGET_ENVIRONMENT = "sandbox";
 
-// Endpoint that your frontend calls when you click a day to save
+// 1. HOME ROUTE (Fixes the "Cannot GET /" error when Render wakes up)
+app.get('/', (req, res) => {
+    res.send('FRM MoMo Backend is awake and running!');
+});
+
+// 2. PAYMENT ENDPOINT
 app.post('/pay', async (req, res) => {
     const { amount, phone, description } = req.body;
 
@@ -29,6 +37,8 @@ app.post('/pay', async (req, res) => {
         });
 
         if (!tokenResponse.ok) {
+            const tokenErrText = await tokenResponse.text();
+            console.error("Token Error Response:", tokenErrText);
             throw new Error('Failed to get token from MTN Sandbox');
         }
 
@@ -52,7 +62,7 @@ app.post('/pay', async (req, res) => {
             },
             body: JSON.stringify({
                 amount: amount.toString(),
-                currency: "EUR", // MTN Sandbox default test currency; use ZMW in production
+                currency: "EUR", // MTN Sandbox default test currency
                 externalId: "123456",
                 payer: {
                     partyIdType: "MSISDN",
@@ -63,7 +73,6 @@ app.post('/pay', async (req, res) => {
             })
         });
 
-        // In sandbox, a 202 Accepted response means the USSD push was triggered successfully
         if (payResponse.status === 202 || payResponse.ok) {
             return res.json({ success: true, referenceId: referenceId, message: "USSD push sent successfully!" });
         } else {
