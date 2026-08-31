@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -183,7 +182,13 @@
         }
         .back-btn { background: #718096; }
         .reset-btn { background: var(--danger-color); }
-        .withdraw-btn { background: var(--success-color); margin-top: 8px; }
+        .vault-actions {
+            display: none;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .withdraw-btn { background: var(--success-color); flex: 1; margin-top: 0; }
+        .rollover-btn { background: var(--warning-color); color: #1a365d; flex: 1; margin-top: 0; }
 
         #multiPayBanner {
             display: none;
@@ -341,7 +346,13 @@
             <h4 style="margin: 0 0 5px 0; color: #b7791f; font-size: 0.95rem;">🏦 App Business Vault & Lock Status</h4>
             <p id="vaultStatusText" style="font-size: 0.8rem; margin: 4px 0; color: #4a5568;"></p>
             <p id="vaultMaturityText" style="font-size: 0.8rem; margin: 4px 0; font-weight: bold; color: #1a365d;"></p>
-            <button id="withdrawBtn" class="withdraw-btn" onclick="requestVaultWithdrawal()" disabled>🔓 Unlock & Withdraw to MTN MoMo</button>
+            
+            <button id="withdrawBtnLocked" class="withdraw-btn" style="margin-top: 8px; width: 100%;" disabled>🔒 Vault Currently Locked</button>
+            
+            <div id="vaultUnlockedActions" class="vault-actions">
+                <button class="withdraw-btn" onclick="requestVaultWithdrawal()">🔓 Withdraw to MTN MoMo</button>
+                <button class="rollover-btn" onclick="requestVaultRollover()">🔄 Roll Over & Re-Lock</button>
+            </div>
         </div>
 
         <div class="card" style="background: #fff5f5; border-left-color: #e53e3e;">
@@ -358,7 +369,7 @@
         
         <div id="multiPayBanner">
             <span id="selectedCountText" style="font-size: 0.85rem; font-weight: bold; color: #2b6cb0; display: block; margin-bottom: 8px;">0 days selected (Total: K0.00)</span>
-            <button onclick="openMultiPayModal()" style="background: var(--success-color); padding: 8px; font-size: 0.85rem;">Proceed to Pay Selected Days via MTN MoMo 🔒</button>
+            <button id="proceedPayBtn" onclick="openMultiPayModal()" style="background: var(--success-color); padding: 8px; font-size: 0.85rem;">Proceed to Pay via MTN MoMo 🔒</button>
         </div>
 
         <div class="input-group" style="margin-bottom: 15px;">
@@ -372,7 +383,7 @@
 
 <div id="momo-modal" class="modal">
     <div class="modal-content">
-        <h3>🟡 MTN Mobile Money Deposit</h3>
+        <h3 id="modalHeaderTitle">🟡 MTN Mobile Money Deposit</h3>
         <p id="modalText" style="font-size: 0.85rem; color: #4a5568; margin-bottom: 10px;"></p>
         
         <div id="modalFormContainer">
@@ -380,7 +391,7 @@
                 <label>Confirm MTN Number (PIN Prompt will appear on this phone):</label>
                 <input type="tel" id="momoPhoneInput" placeholder="+260XXXXXXXXX">
             </div>
-            <button style="background: var(--mtn-yellow); color: #1a365d;" onclick="triggerMomoUssdPrompt()">Send Confirmation PIN Prompt</button>
+            <button id="modalActionBtn" style="background: var(--mtn-yellow); color: #1a365d;" onclick="triggerMomoUssdPrompt()">Send Confirmation PIN Prompt</button>
             <button class="cancel-btn" onclick="closeModal('momo-modal')">Cancel</button>
         </div>
 
@@ -396,11 +407,11 @@
     <div class="modal-content">
         <h3>🔒 Premium Feature Access</h3>
         <p style="font-size: 0.82rem; color: #4a5568; margin-bottom: 12px;">
-            Select a subscription package to unlock records matching your package term period and bulk payments:
+            Select a subscription package to unlock records matching your package term period and multi-day selections:
         </p>
-        <button class="sub-btn" onclick="subscribePlan(1, 28, '1 Month')">1 Month Subscription - K28</button>
-        <button class="sub-btn" onclick="subscribePlan(2, 50, '2 Months')">2 Months Subscription - K50</button>
-        <button class="sub-btn" onclick="subscribePlan(3, 70, '3 Months')">3 Months Subscription - K70</button>
+        <button class="sub-btn" onclick="subscribePlan(1, 15, '1 Month')">1 Month Subscription - K15</button>
+        <button class="sub-btn" onclick="subscribePlan(2, 28, '2 Months')">2 Months Subscription - K28</button>
+        <button class="sub-btn" onclick="subscribePlan(3, 40, '3 Months')">3 Months Subscription - K40</button>
         <button class="sub-btn" onclick="subscribePlan(6, 100, '6 Months')">6 Months Subscription - K100</button>
         <button class="sub-btn" onclick="subscribePlan(12, 200, '12 Months')">12 Months Subscription - K200</button>
         <button class="cancel-btn" onclick="closeModal('subscription-modal')">Cancel / Stay Free</button>
@@ -416,7 +427,7 @@
     let defaultPhone = "+260";
     let lockTermMonths = 0.25; 
     let isSubscribed = false;
-    let subscriptionMonthsAllowed = 0; // Tracks record viewing window tied to subscription package
+    let subscriptionMonthsAllowed = 0; 
     let startDateTimestamp = null;
     let currentSaved = 0;
     let savedDays = {}; 
@@ -427,7 +438,7 @@
     const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
     window.onload = function() {
-        const savedStorage = localStorage.getItem('frm_savings_data_v5');
+        const savedStorage = localStorage.getItem('frm_savings_data_v6');
         if (savedStorage) {
             try {
                 const data = JSON.parse(savedStorage);
@@ -451,7 +462,7 @@
                 showDashboard();
             } catch (e) {
                 console.error("Error reading storage data, resetting state:", e);
-                localStorage.removeItem('frm_savings_data_v5');
+                localStorage.removeItem('frm_savings_data_v6');
             }
         }
     };
@@ -546,29 +557,42 @@
 
         let statusTextEl = document.getElementById('vaultStatusText');
         let maturityTextEl = document.getElementById('vaultMaturityText');
-        let withdrawBtn = document.getElementById('withdrawBtn');
+        let withdrawBtnLocked = document.getElementById('withdrawBtnLocked');
+        let vaultUnlockedActions = document.getElementById('vaultUnlockedActions');
 
         maturityTextEl.innerText = `Maturity Date: ${maturityDate.toDateString()}`;
 
         if (isUnlocked) {
             statusTextEl.innerHTML = `Status: <strong style="color: var(--success-color);">🔓 UNLOCKED</strong> (Term completed successfully).`;
-            withdrawBtn.disabled = false;
+            withdrawBtnLocked.style.display = 'none';
+            vaultUnlockedActions.style.display = 'flex';
         } else {
             let diffTime = maturityDate - now;
             let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
             statusTextEl.innerHTML = `Status: <strong style="color: var(--warning-color);">🔒 LOCKED IN APP BUSINESS VAULT</strong> (~${diffDays} days remaining).`;
-            withdrawBtn.disabled = true;
+            withdrawBtnLocked.style.display = 'block';
+            vaultUnlockedActions.style.display = 'none';
         }
     }
 
     function requestVaultWithdrawal() {
         let phoneNum = defaultPhone;
-        if(confirm(`Unlock complete! Transfer your total savings of K${currentSaved.toFixed(2)} back to your main MTN MoMo account (${phoneNum})?`)) {
+        if(confirm(`Transfer your total savings of K${currentSaved.toFixed(2)} back to your main MTN MoMo account (${phoneNum})?`)) {
             showToast(`Withdrawal of K${currentSaved.toFixed(2)} sent to ${phoneNum}! 🟡`);
             currentSaved = 0;
             savedDays = {};
             saveToLocalStorage();
             showDashboard();
+        }
+    }
+
+    function requestVaultRollover() {
+        let phoneNum = defaultPhone;
+        if(confirm(`Roll over your current total of K${currentSaved.toFixed(2)} into a fresh savings lock term starting today?`)) {
+            startDateTimestamp = new Date().getTime();
+            saveToLocalStorage();
+            showToast(`Savings successfully rolled over and re-locked! 🔄`);
+            checkVaultLockStatus();
         }
     }
 
@@ -579,7 +603,7 @@
 
     function clearAllData() {
         if(confirm("Are you sure? This will completely wipe all progress, saved history, and active subscriptions, resetting the app back to brand new.")) {
-            localStorage.removeItem('frm_savings_data_v5');
+            localStorage.removeItem('frm_savings_data_v6');
             savedDays = {};
             selectedDaysQueue = [];
             currentSaved = 0;
@@ -593,7 +617,7 @@
     }
 
     function saveToLocalStorage() {
-        localStorage.setItem('frm_savings_data_v5', JSON.stringify({
+        localStorage.setItem('frm_savings_data_v6', JSON.stringify({
             year: selectedYear, 
             target: totalTarget, 
             daily: dailyAmount, 
@@ -707,9 +731,8 @@
         let currentDayNum = today.getDate();
         let currentYearVal = today.getFullYear();
 
-        // Limit record generation strictly to the months allowed by the subscription package term
         monthNames.forEach((monthName, monthIndex) => {
-            if (monthIndex >= subscriptionMonthsAllowed) return; // Restricts records beyond package period
+            if (monthIndex >= subscriptionMonthsAllowed) return; 
 
             const totalDays = new Date(selectedYear, monthIndex + 1, 0).getDate();
 
@@ -776,10 +799,18 @@
     function updateMultiPayBanner() {
         const banner = document.getElementById('multiPayBanner');
         const countText = document.getElementById('selectedCountText');
+        const proceedBtn = document.getElementById('proceedPayBtn');
         
         if (selectedDaysQueue.length > 0) {
             let totalSum = (selectedDaysQueue.length * dailyAmount).toFixed(2);
             countText.innerText = `${selectedDaysQueue.length} day(s) selected | Total Payment: K${totalSum}`;
+            
+            if (selectedDaysQueue.length === 1) {
+                proceedBtn.innerText = "Proceed to Pay Single Deposit via MTN MoMo 🟡";
+            } else {
+                proceedBtn.innerText = "Proceed to Pay Bulk Deposit via MTN MoMo 🔒";
+            }
+            
             banner.style.display = 'block';
         } else {
             banner.style.display = 'none';
@@ -798,7 +829,16 @@
         document.getElementById('modalFormContainer').style.display = 'block';
         document.getElementById('modalLoadingContainer').style.display = 'none';
         
-        document.getElementById('modalText').innerText = `Approve single bulk deposit of K${totalSum} into your locked vault for ${selectedDaysQueue.length} selected day(s).`;
+        if (selectedDaysQueue.length === 1) {
+            document.getElementById('modalHeaderTitle').innerText = "🟡 MTN Mobile Money Single Deposit";
+            document.getElementById('modalText').innerText = `Approve single deposit of K${totalSum} into your locked vault for the selected day.`;
+            document.getElementById('modalActionBtn').innerText = "Approve single deposit";
+        } else {
+            document.getElementById('modalHeaderTitle').innerText = "🟡 MTN Mobile Money Bulk Deposit";
+            document.getElementById('modalText').innerText = `Approve bulk deposit of K${totalSum} into your locked vault for ${selectedDaysQueue.length} selected days.`;
+            document.getElementById('modalActionBtn').innerText = "Approve bulk deposit";
+        }
+
         document.getElementById('momoPhoneInput').value = defaultPhone;
         document.getElementById('momo-modal').style.display = 'flex';
     }
@@ -877,4 +917,3 @@
 
 </body>
 </html>
-
