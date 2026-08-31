@@ -1,0 +1,880 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Daily Saving Plan - MTN MoMo</title>
+    <style>
+        :root {
+            --primary-color: #1a365d;
+            --success-color: #38a169;
+            --mtn-yellow: #ffcc00;
+            --bg-color: #f7fafc;
+            --danger-color: #e53e3e;
+            --warning-color: #d69e2e;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: #2d3748;
+            margin: 0;
+            padding: 15px;
+        }
+        .container {
+            max-width: 650px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+        h1 {
+            color: var(--primary-color);
+            text-align: center;
+            font-size: 1.4rem;
+            margin-bottom: 5px;
+        }
+        .dashboard-heading {
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #000000;
+            margin-bottom: 15px;
+        }
+        .card {
+            background: #ebf8ff;
+            border-left: 5px solid var(--primary-color);
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+        }
+        .vault-card {
+            background: #fffaf0;
+            border-left: 5px solid var(--warning-color);
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .stat-box {
+            background: #f7fafc;
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+        .stat-box span {
+            display: block;
+            font-size: 0.7rem;
+            color: #718096;
+        }
+        .stat-box strong {
+            font-size: 0.85rem;
+            color: var(--primary-color);
+        }
+        .summary-banner {
+            background: #ebf8ff;
+            border: 1px solid #bee3f8;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 0.85rem;
+            text-align: center;
+            color: #2b6cb0;
+            font-weight: bold;
+        }
+        .month-section {
+            margin-bottom: 20px;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 15px;
+        }
+        .month-title {
+            font-size: 1rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 8px;
+        }
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+        }
+        .weekday-header {
+            text-align: center;
+            font-size: 0.65rem;
+            font-weight: bold;
+            color: #4a5568;
+            padding-bottom: 4px;
+        }
+        .day-cell {
+            aspect-ratio: 1;
+            background: #edf2f7;
+            border: 1px solid #cbd5e0;
+            border-radius: 3px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+        .day-cell:active {
+            transform: scale(0.95);
+        }
+        .day-cell.empty {
+            background: transparent;
+            border: none;
+            cursor: default;
+        }
+        .day-cell.saved {
+            background: var(--success-color);
+            color: white;
+            border-color: #2f855a;
+        }
+        .day-cell .amount {
+            font-size: 0.5rem;
+            opacity: 0.8;
+        }
+        .input-group {
+            margin-bottom: 12px;
+        }
+        label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid #cbd5e0;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            background: white;
+        }
+        button {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px;
+            width: 100%;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        button:disabled {
+            background: #cbd5e0 !important;
+            cursor: not-allowed;
+            color: #718096;
+        }
+        .action-btns {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+        .back-btn { background: #718096; }
+        .reset-btn { background: var(--danger-color); }
+        .withdraw-btn { background: var(--success-color); margin-top: 8px; }
+
+        #multiPayBanner {
+            display: none;
+            background: #ebf8ff;
+            border: 2px dashed #3182ce;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 350px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            text-align: center;
+        }
+        .modal-content h3 {
+            color: #1a365d;
+            margin-top: 0;
+            font-size: 1.1rem;
+        }
+        .sub-btn {
+            background: #3182ce;
+            color: white;
+            margin-top: 8px;
+        }
+        .cancel-btn {
+            background: #e2e8f0;
+            color: #4a5568;
+            margin-top: 5px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 15px auto;
+            display: none;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        #toast {
+            visibility: hidden;
+            min-width: 250px;
+            background-color: #38a169;
+            color: white;
+            text-align: center;
+            border-radius: 8px;
+            padding: 12px;
+            position: fixed;
+            z-index: 1000;
+            left: 50%;
+            bottom: 30px;
+            transform: translateX(-50%);
+            font-size: 0.9rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        #toast.show {
+            visibility: visible;
+            animation: fadein 0.3s, fadeout 0.3s 2.2s;
+        }
+        @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
+        @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>My Daily Saving Plan</h1>
+
+    <div class="card" id="setup-card">
+        <h3>Customize Your Saving Plan & Lock Terms</h3>
+        <div class="input-group">
+            <label>Select Savings Year:</label>
+            <select id="savingYear">
+                <option value="2026">2026</option>
+                <option value="2027" selected>2027</option>
+                <option value="2028">2028</option>
+            </select>
+        </div>
+        <div class="input-group">
+            <label>Target Amount (ZMW - K):</label>
+            <input type="number" id="targetAmount" value="3000">
+        </div>
+        <div class="input-group">
+            <label>Daily Saving Amount (Min K5.00):</label>
+            <input type="number" id="dailyAmount" value="15.00" min="5" step="0.50">
+        </div>
+        <div class="input-group">
+            <label>🔒 Lock-Up Period Term:</label>
+            <select id="lockTermMonths" onchange="checkLockTermSelection(this)">
+                <option value="0.25">1 Week Lock (Free Mode)</option>
+                <option value="1">1 Month Lock (🔒 Premium)</option>
+                <option value="2" selected>2 Months Lock (🔒 Premium)</option>
+                <option value="3">3 Months Lock (🔒 Premium)</option>
+                <option value="6">6 Months Lock (🔒 Premium)</option>
+                <option value="12">12 Months (1 Year) Lock (🔒 Premium)</option>
+            </select>
+        </div>
+        <div class="input-group">
+            <label>Default MTN MoMo Number (PIN Confirmed):</label>
+            <input type="text" id="defaultPhone" placeholder="e.g. +260..." value="+260">
+        </div>
+        <button onclick="initializePlan()">Open My Secure Savings Vault</button>
+    </div>
+
+    <div id="dashboard" style="display:none;">
+        <div class="dashboard-heading">Savings Overview & Locked Vault</div>
+
+        <div class="action-btns">
+            <button class="back-btn" onclick="resetToSetup()">⚙️ Settings & Terms</button>
+            <button class="reset-btn" onclick="clearAllData()">🗑️ Reset & Clear Everything</button>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-box">
+                <span>Total Target</span>
+                <strong id="displayTarget">K3,000</strong>
+            </div>
+            <div class="stat-box">
+                <span>Total Saved</span>
+                <strong id="displaySaved" style="color: var(--success-color);">K0.00</strong>
+            </div>
+            <div class="stat-box">
+                <span>Progress</span>
+                <strong id="displayPercent">0%</strong>
+            </div>
+        </div>
+
+        <div class="summary-banner" id="targetBreakdown"></div>
+
+        <div class="vault-card">
+            <h4 style="margin: 0 0 5px 0; color: #b7791f; font-size: 0.95rem;">🏦 App Business Vault & Lock Status</h4>
+            <p id="vaultStatusText" style="font-size: 0.8rem; margin: 4px 0; color: #4a5568;"></p>
+            <p id="vaultMaturityText" style="font-size: 0.8rem; margin: 4px 0; font-weight: bold; color: #1a365d;"></p>
+            <button id="withdrawBtn" class="withdraw-btn" onclick="requestVaultWithdrawal()" disabled>🔓 Unlock & Withdraw to MTN MoMo</button>
+        </div>
+
+        <div class="card" style="background: #fff5f5; border-left-color: #e53e3e;">
+            <button onclick="toggleRecordsSection()" style="background: #e53e3e; font-size: 0.85rem; padding: 8px; margin-bottom: 5px;">
+                📂 <span id="toggleBtnText">Show Daily Book Records 🔒</span>
+            </button>
+            <div id="recordsCollapsibleContent" style="display: none; margin-top: 10px;">
+                <p style="font-size: 0.8rem; color: #718096; margin-bottom: 8px;" id="recordSubText">History tracking restricted to package term period.</p>
+                <div id="accountsRecordList" style="max-height: 150px; overflow-y: auto; font-size: 0.8rem; background: white; padding: 8px; border-radius: 6px; border: 1px solid #fed7d7;"></div>
+            </div>
+        </div>
+
+        <div style="font-size: 0.75rem; color: #718096; margin-bottom: 10px; text-align: center;" id="dashboardYearTitle"></div>
+        
+        <div id="multiPayBanner">
+            <span id="selectedCountText" style="font-size: 0.85rem; font-weight: bold; color: #2b6cb0; display: block; margin-bottom: 8px;">0 days selected (Total: K0.00)</span>
+            <button onclick="openMultiPayModal()" style="background: var(--success-color); padding: 8px; font-size: 0.85rem;">Proceed to Pay Selected Days via MTN MoMo 🔒</button>
+        </div>
+
+        <div class="input-group" style="margin-bottom: 15px;">
+            <label style="color: var(--primary-color);">📅 Select Month to View:</label>
+            <select id="activeMonthSelect" onchange="changeActiveMonth()"></select>
+        </div>
+
+        <div id="activeMonthContainer"></div>
+    </div>
+</div>
+
+<div id="momo-modal" class="modal">
+    <div class="modal-content">
+        <h3>🟡 MTN Mobile Money Deposit</h3>
+        <p id="modalText" style="font-size: 0.85rem; color: #4a5568; margin-bottom: 10px;"></p>
+        
+        <div id="modalFormContainer">
+            <div class="input-group" style="text-align: left;">
+                <label>Confirm MTN Number (PIN Prompt will appear on this phone):</label>
+                <input type="tel" id="momoPhoneInput" placeholder="+260XXXXXXXXX">
+            </div>
+            <button style="background: var(--mtn-yellow); color: #1a365d;" onclick="triggerMomoUssdPrompt()">Send Confirmation PIN Prompt</button>
+            <button class="cancel-btn" onclick="closeModal('momo-modal')">Cancel</button>
+        </div>
+
+        <div id="modalLoadingContainer" style="display:none;">
+            <div class="spinner"></div>
+            <p id="ussdStatusText" style="font-size: 0.8rem; font-weight: bold; color: #b7791f; margin: 10px 0;">Sending USSD push request to phone...</p>
+            <p style="font-size: 0.7rem; color: #718096;">Please check your phone and enter your MTN MoMo PIN to authorize payment.</p>
+        </div>
+    </div>
+</div>
+
+<div id="subscription-modal" class="modal">
+    <div class="modal-content">
+        <h3>🔒 Premium Feature Access</h3>
+        <p style="font-size: 0.82rem; color: #4a5568; margin-bottom: 12px;">
+            Select a subscription package to unlock records matching your package term period and bulk payments:
+        </p>
+        <button class="sub-btn" onclick="subscribePlan(1, 28, '1 Month')">1 Month Subscription - K28</button>
+        <button class="sub-btn" onclick="subscribePlan(2, 50, '2 Months')">2 Months Subscription - K50</button>
+        <button class="sub-btn" onclick="subscribePlan(3, 70, '3 Months')">3 Months Subscription - K70</button>
+        <button class="sub-btn" onclick="subscribePlan(6, 100, '6 Months')">6 Months Subscription - K100</button>
+        <button class="sub-btn" onclick="subscribePlan(12, 200, '12 Months')">12 Months Subscription - K200</button>
+        <button class="cancel-btn" onclick="closeModal('subscription-modal')">Cancel / Stay Free</button>
+    </div>
+</div>
+
+<div id="toast">Saved Successfully! 🟡</div>
+
+<script>
+    let totalTarget = 3000;
+    let dailyAmount = 15.00;
+    let selectedYear = 2026;
+    let defaultPhone = "+260";
+    let lockTermMonths = 0.25; 
+    let isSubscribed = false;
+    let subscriptionMonthsAllowed = 0; // Tracks record viewing window tied to subscription package
+    let startDateTimestamp = null;
+    let currentSaved = 0;
+    let savedDays = {}; 
+    let selectedDaysQueue = []; 
+    let currentActiveMonthIndex = new Date().getMonth();
+
+    const BACKEND_URL = 'https://frm-momo-backend.onrender.com/pay';
+    const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+    window.onload = function() {
+        const savedStorage = localStorage.getItem('frm_savings_data_v5');
+        if (savedStorage) {
+            try {
+                const data = JSON.parse(savedStorage);
+                selectedYear = data.year || 2026;
+                totalTarget = data.target || 3000;
+                dailyAmount = data.daily || 15.00;
+                defaultPhone = data.phone || "+260";
+                lockTermMonths = data.lockTermMonths !== undefined ? data.lockTermMonths : 0.25;
+                isSubscribed = data.isSubscribed || false;
+                subscriptionMonthsAllowed = data.subscriptionMonthsAllowed || 0;
+                startDateTimestamp = data.startDateTimestamp || new Date().getTime();
+                savedDays = data.savedDays || {};
+                currentSaved = data.currentSaved || 0;
+
+                document.getElementById('savingYear').value = selectedYear;
+                document.getElementById('targetAmount').value = totalTarget;
+                document.getElementById('dailyAmount').value = dailyAmount;
+                document.getElementById('defaultPhone').value = defaultPhone;
+                document.getElementById('lockTermMonths').value = lockTermMonths;
+
+                showDashboard();
+            } catch (e) {
+                console.error("Error reading storage data, resetting state:", e);
+                localStorage.removeItem('frm_savings_data_v5');
+            }
+        }
+    };
+
+    function checkLockTermSelection(selectElement) {
+        let val = parseFloat(selectElement.value);
+        if (val > 0.25 && !isSubscribed) {
+            document.getElementById('subscription-modal').style.display = 'flex';
+        }
+    }
+
+    function subscribePlan(monthsTerm, price, planName) {
+        if(confirm(`Authorize K${price} for the ${planName} subscription via MTN MoMo?`)) {
+            isSubscribed = true;
+            subscriptionMonthsAllowed = monthsTerm;
+            closeModal('subscription-modal');
+            showToast(`${planName} Subscription & Records Unlocked! 🎉`);
+            saveToLocalStorage();
+            checkVaultLockStatus();
+            updateAccountsBook();
+        }
+    }
+
+    function initializePlan() {
+        selectedYear = parseInt(document.getElementById('savingYear').value);
+        totalTarget = parseFloat(document.getElementById('targetAmount').value) || 3000;
+        dailyAmount = parseFloat(document.getElementById('dailyAmount').value) || 15.00;
+        defaultPhone = document.getElementById('defaultPhone').value || "+260";
+        lockTermMonths = parseFloat(document.getElementById('lockTermMonths').value) || 0.25;
+
+        if (lockTermMonths > 0.25 && !isSubscribed) {
+            document.getElementById('subscription-modal').style.display = 'flex';
+            return;
+        }
+
+        if (!startDateTimestamp) {
+            startDateTimestamp = new Date().getTime();
+        }
+
+        let today = new Date();
+        if (selectedYear === today.getFullYear()) {
+            currentActiveMonthIndex = today.getMonth();
+        } else {
+            currentActiveMonthIndex = 0;
+        }
+
+        saveToLocalStorage();
+        showDashboard();
+    }
+
+    function showDashboard() {
+        document.getElementById('displayTarget').innerText = 'K' + totalTarget.toLocaleString();
+        document.getElementById('dashboardYearTitle').innerText = `Year ${selectedYear} calendar - Tap any day to make a saving via MTN MoMo Payment:`;
+        
+        let weeklyTarget = (dailyAmount * 7).toFixed(2);
+        let monthlyTarget = (dailyAmount * 30).toFixed(2);
+
+        document.getElementById('targetBreakdown').innerHTML = 
+            `Pace (${selectedYear}) : <strong>K${dailyAmount}</strong> day / <strong>K${weeklyTarget}</strong> weekly / <strong>K${monthlyTarget}</strong> monthly`;
+
+        currentSaved = 0;
+        for (let key in savedDays) {
+            if (savedDays[key]) currentSaved += dailyAmount;
+        }
+
+        let percentage = totalTarget > 0 ? Math.min(100, Math.round((currentSaved / totalTarget) * 100)) : 0;
+        document.getElementById('displaySaved').innerText = 'K' + currentSaved.toFixed(2);
+        document.getElementById('displayPercent').innerText = percentage + '%';
+
+        checkVaultLockStatus();
+
+        document.getElementById('setup-card').style.display = 'none';
+        document.getElementById('dashboard').style.display = 'block';
+
+        populateMonthDropdown();
+        renderActiveMonth();
+        updateAccountsBook();
+    }
+
+    function checkVaultLockStatus() {
+        let startDate = new Date(startDateTimestamp);
+        let maturityDate = new Date(startDate);
+        
+        if (lockTermMonths === 0.25) {
+            maturityDate.setDate(maturityDate.getDate() + 7);
+        } else {
+            maturityDate.setMonth(maturityDate.getMonth() + lockTermMonths);
+        }
+
+        let now = new Date();
+        let isUnlocked = now >= maturityDate;
+
+        let statusTextEl = document.getElementById('vaultStatusText');
+        let maturityTextEl = document.getElementById('vaultMaturityText');
+        let withdrawBtn = document.getElementById('withdrawBtn');
+
+        maturityTextEl.innerText = `Maturity Date: ${maturityDate.toDateString()}`;
+
+        if (isUnlocked) {
+            statusTextEl.innerHTML = `Status: <strong style="color: var(--success-color);">🔓 UNLOCKED</strong> (Term completed successfully).`;
+            withdrawBtn.disabled = false;
+        } else {
+            let diffTime = maturityDate - now;
+            let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            statusTextEl.innerHTML = `Status: <strong style="color: var(--warning-color);">🔒 LOCKED IN APP BUSINESS VAULT</strong> (~${diffDays} days remaining).`;
+            withdrawBtn.disabled = true;
+        }
+    }
+
+    function requestVaultWithdrawal() {
+        let phoneNum = defaultPhone;
+        if(confirm(`Unlock complete! Transfer your total savings of K${currentSaved.toFixed(2)} back to your main MTN MoMo account (${phoneNum})?`)) {
+            showToast(`Withdrawal of K${currentSaved.toFixed(2)} sent to ${phoneNum}! 🟡`);
+            currentSaved = 0;
+            savedDays = {};
+            saveToLocalStorage();
+            showDashboard();
+        }
+    }
+
+    function resetToSetup() {
+        document.getElementById('dashboard').style.display = 'none';
+        document.getElementById('setup-card').style.display = 'block';
+    }
+
+    function clearAllData() {
+        if(confirm("Are you sure? This will completely wipe all progress, saved history, and active subscriptions, resetting the app back to brand new.")) {
+            localStorage.removeItem('frm_savings_data_v5');
+            savedDays = {};
+            selectedDaysQueue = [];
+            currentSaved = 0;
+            startDateTimestamp = null;
+            isSubscribed = false;
+            subscriptionMonthsAllowed = 0;
+            document.getElementById('lockTermMonths').value = "0.25";
+            resetToSetup();
+            showToast("App fully reset and restarted!");
+        }
+    }
+
+    function saveToLocalStorage() {
+        localStorage.setItem('frm_savings_data_v5', JSON.stringify({
+            year: selectedYear, 
+            target: totalTarget, 
+            daily: dailyAmount, 
+            phone: defaultPhone, 
+            lockTermMonths: lockTermMonths,
+            isSubscribed: isSubscribed,
+            subscriptionMonthsAllowed: subscriptionMonthsAllowed,
+            startDateTimestamp: startDateTimestamp,
+            savedDays: savedDays, 
+            currentSaved: currentSaved
+        }));
+    }
+
+    function showToast(message) {
+        const toast = document.getElementById("toast");
+        toast.innerText = message;
+        toast.className = "show";
+        setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 2200);
+    }
+
+    function toggleRecordsSection() {
+        if (!isSubscribed) {
+            document.getElementById('subscription-modal').style.display = 'flex';
+            return;
+        }
+        const content = document.getElementById('recordsCollapsibleContent');
+        const btnText = document.getElementById('toggleBtnText');
+        if (content.style.display === 'none') {
+            content.style.display = 'block';
+            btnText.innerText = 'Hide Daily Book Records 🔓';
+        } else {
+            content.style.display = 'none';
+            btnText.innerText = 'Show Daily Book Records 🔒';
+        }
+    }
+
+    function populateMonthDropdown() {
+        const dropdown = document.getElementById('activeMonthSelect');
+        dropdown.innerHTML = '';
+        monthNames.forEach((name, index) => {
+            let opt = document.createElement('option');
+            opt.value = index;
+            opt.innerText = `${name} ${selectedYear}`;
+            if (index === currentActiveMonthIndex) {
+                opt.selected = true;
+            }
+            dropdown.appendChild(opt);
+        });
+    }
+
+    function changeActiveMonth() {
+        const dropdown = document.getElementById('activeMonthSelect');
+        currentActiveMonthIndex = parseInt(dropdown.value);
+        renderActiveMonth();
+    }
+
+    function renderActiveMonth() {
+        const container = document.getElementById('activeMonthContainer');
+        container.innerHTML = '';
+        const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+        const monthDiv = document.createElement('div');
+        monthDiv.className = 'month-section';
+        
+        let monthName = monthNames[currentActiveMonthIndex];
+        let titleHTML = `<div class="month-title">${monthName} ${selectedYear}</div>`;
+        let gridHTML = `<div class="calendar-grid">`;
+        
+        weekdays.forEach(day => { gridHTML += `<div class="weekday-header">${day}</div>`; });
+
+        const firstDayIndex = new Date(selectedYear, currentActiveMonthIndex, 1).getDay();
+        const totalDays = new Date(selectedYear, currentActiveMonthIndex + 1, 0).getDate();
+
+        for (let i = 0; i < firstDayIndex; i++) { gridHTML += `<div class="day-cell empty"></div>`; }
+
+        for (let day = 1; day <= totalDays; day++) {
+            let uniqueKey = `${selectedYear}-${monthName}-${day}`;
+            let isSaved = savedDays[uniqueKey] ? ' saved' : '';
+            let isQueued = selectedDaysQueue.includes(uniqueKey);
+            
+            let extraStyle = '';
+            if (isQueued) {
+                extraStyle = 'background: #bee3f8; border-color: #3182ce; color: #2b6cb0; font-weight: bold;';
+            }
+
+            gridHTML += `<div class="day-cell${isSaved}" style="${extraStyle}" onclick="handleDayClick('${uniqueKey}', '${monthName} ${day}')">
+                <strong>${day}</strong><span class="amount">K${dailyAmount}</span>
+            </div>`;
+        }
+
+        gridHTML += `</div>`;
+        monthDiv.innerHTML = titleHTML + gridHTML;
+        container.appendChild(monthDiv);
+    }
+
+    function updateAccountsBook() {
+        const recordContainer = document.getElementById('accountsRecordList');
+        const subText = document.getElementById('recordSubText');
+        recordContainer.innerHTML = '';
+
+        if (!isSubscribed) {
+            recordContainer.innerHTML = `<p style="text-align: center; color: #e53e3e; margin: 5px 0;">Records locked. Please select a subscription package.</p>`;
+            return;
+        }
+
+        subText.innerText = `Showing records for your active ${subscriptionMonthsAllowed}-month subscription package period.`;
+
+        let htmlContent = "";
+        let today = new Date();
+        let currentMonthIndex = today.getMonth();
+        let currentDayNum = today.getDate();
+        let currentYearVal = today.getFullYear();
+
+        // Limit record generation strictly to the months allowed by the subscription package term
+        monthNames.forEach((monthName, monthIndex) => {
+            if (monthIndex >= subscriptionMonthsAllowed) return; // Restricts records beyond package period
+
+            const totalDays = new Date(selectedYear, monthIndex + 1, 0).getDate();
+
+            for (let day = 1; day <= totalDays; day++) {
+                let uniqueKey = `${selectedYear}-${monthName}-${day}`;
+                
+                let isPastDay = false;
+                if (selectedYear < currentYearVal) {
+                    isPastDay = true;
+                } else if (selectedYear === currentYearVal) {
+                    if (monthIndex < currentMonthIndex || (monthIndex === currentMonthIndex && day < currentDayNum)) {
+                        isPastDay = true;
+                    }
+                }
+
+                if (savedDays[uniqueKey]) {
+                    htmlContent += `<div style="display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #edf2f7;">
+                        <span>${monthName} ${day}, ${selectedYear}</span>
+                        <span style="color: #38a169; font-weight: bold;">✅ Saved (K${dailyAmount})</span>
+                    </div>`;
+                } else if (isPastDay) {
+                    htmlContent += `<div style="display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #edf2f7;">
+                        <span>${monthName} ${day}, ${selectedYear}</span>
+                        <span style="color: #e53e3e; font-weight: bold;">❌ Missed (K${dailyAmount})</span>
+                    </div>`;
+                }
+            }
+        });
+
+        if (htmlContent === "") {
+            recordContainer.innerHTML = `<p style="text-align: center; color: #a0aec0; margin: 5px 0;">No history within this package period yet.</p>`;
+        } else {
+            recordContainer.innerHTML = htmlContent;
+        }
+    }
+
+    function handleDayClick(uniqueKey, dateLabel) {
+        if (savedDays[uniqueKey]) {
+            if(confirm(`Remove saved K${dailyAmount} for ${dateLabel}?`)) {
+                savedDays[uniqueKey] = false;
+                currentSaved -= dailyAmount;
+                if (currentSaved < 0) currentSaved = 0;
+                updateStats();
+                showToast(`Removed K${dailyAmount} for ${dateLabel}`);
+            }
+            return;
+        }
+
+        let index = selectedDaysQueue.indexOf(uniqueKey);
+        if (index > -1) {
+            selectedDaysQueue.splice(index, 1);
+        } else {
+            if (selectedDaysQueue.length >= 1 && !isSubscribed) {
+                document.getElementById('subscription-modal').style.display = 'flex';
+                return;
+            }
+            selectedDaysQueue.push(uniqueKey);
+        }
+
+        renderActiveMonth();
+        updateMultiPayBanner();
+    }
+
+    function updateMultiPayBanner() {
+        const banner = document.getElementById('multiPayBanner');
+        const countText = document.getElementById('selectedCountText');
+        
+        if (selectedDaysQueue.length > 0) {
+            let totalSum = (selectedDaysQueue.length * dailyAmount).toFixed(2);
+            countText.innerText = `${selectedDaysQueue.length} day(s) selected | Total Payment: K${totalSum}`;
+            banner.style.display = 'block';
+        } else {
+            banner.style.display = 'none';
+        }
+    }
+
+    function openMultiPayModal() {
+        if (selectedDaysQueue.length > 1 && !isSubscribed) {
+            document.getElementById('subscription-modal').style.display = 'flex';
+            return;
+        }
+        if (selectedDaysQueue.length === 0) return;
+        
+        let totalSum = (selectedDaysQueue.length * dailyAmount).toFixed(2);
+        
+        document.getElementById('modalFormContainer').style.display = 'block';
+        document.getElementById('modalLoadingContainer').style.display = 'none';
+        
+        document.getElementById('modalText').innerText = `Approve single bulk deposit of K${totalSum} into your locked vault for ${selectedDaysQueue.length} selected day(s).`;
+        document.getElementById('momoPhoneInput').value = defaultPhone;
+        document.getElementById('momo-modal').style.display = 'flex';
+    }
+
+    function closeModal(modalId) {
+        document.getElementById(modalId).style.display = 'none';
+    }
+
+    async function triggerMomoUssdPrompt() {
+        let phoneNum = document.getElementById('momoPhoneInput').value.trim();
+        if(!phoneNum) {
+            alert("Please enter a valid MTN phone number.");
+            return;
+        }
+        defaultPhone = phoneNum;
+
+        document.getElementById('modalFormContainer').style.display = 'none';
+        document.getElementById('modalLoadingContainer').style.display = 'block';
+        
+        let totalSum = selectedDaysQueue.length * dailyAmount;
+        let statusEl = document.getElementById('ussdStatusText');
+        statusEl.innerText = `Sending PIN confirmation prompt to ${phoneNum}...`;
+
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 20000);
+
+            const response = await fetch(BACKEND_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    amount: totalSum,
+                    phone: phoneNum,
+                    description: `Vault deposit for ${selectedDaysQueue.length} days`
+                }),
+                signal: controller.signal
+            });
+            clearTimeout(timeoutId);
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                selectedDaysQueue.forEach(key => {
+                    savedDays[key] = true;
+                });
+                
+                currentSaved += totalSum;
+                selectedDaysQueue = [];
+                document.getElementById('multiPayBanner').style.display = 'none';
+                
+                closeModal('momo-modal');
+                updateStats();
+                showToast(`Vault Deposit of K${totalSum.toFixed(2)} Successful! 🟡`);
+            } else {
+                throw new Error(data.error || data.message || "Server rejected the payment request.");
+            }
+        } catch (error) {
+            console.error('Submission Error:', error);
+            let errMsg = error.name === 'AbortError' ? "Request timed out. The server is taking too long to respond." : error.message;
+            alert("Backend Error: " + errMsg);
+            document.getElementById('modalFormContainer').style.display = 'block';
+            document.getElementById('modalLoadingContainer').style.display = 'none';
+        }
+    }
+
+    function updateStats() {
+        let percentage = totalTarget > 0 ? Math.min(100, Math.round((currentSaved / totalTarget) * 100)) : 0;
+        document.getElementById('displaySaved').innerText = 'K' + currentSaved.toFixed(2);
+        document.getElementById('displayPercent').innerText = percentage + '%';
+        checkVaultLockStatus();
+        saveToLocalStorage();
+        renderActiveMonth();
+        updateAccountsBook();
+    }
+</script>
+
+</body>
+</html>
+
