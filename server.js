@@ -2,27 +2,32 @@ const express = require('express');
 const fetch = require('node-fetch');
 const cors = require('cors');
 
-// Load .env file locally (Render handles environment variables automatically)
-require('dotenv').config();
-
 const app = express();
 app.use(express.json());
 app.use(cors());
 
-// MTN Sandbox Configuration variables pulled securely from Environment Variables
+// MTN Sandbox Configuration variables pulled securely from Render Environment Variables
 const SUBSCRIPTION_KEY = process.env.MOMO_PRIMARY_KEY;
 const API_USER = process.env.MOMO_API_USER;
 const API_KEY = process.env.MOMO_API_KEY;
 const TARGET_ENVIRONMENT = "sandbox";
 
-// 1. HOME ROUTE (Fixes the "Cannot GET /" error when Render wakes up)
+// Simple root check so visiting your Render URL shows your backend is alive
 app.get('/', (req, res) => {
-    res.send('FRM MoMo Backend is awake and running!');
+    res.send('FRM MoMo Backend is running live!');
 });
 
-// 2. PAYMENT ENDPOINT
+// Endpoint that your frontend calls when you click a day to save
 app.post('/pay', async (req, res) => {
     const { amount, phone, description } = req.body;
+
+    // Quick safety check for missing Render environment variables
+    if (!SUBSCRIPTION_KEY || !API_USER || !API_KEY) {
+        return res.status(500).json({ 
+            success: false, 
+            error: "Server configuration error: Missing MTN environment variables on Render." 
+        });
+    }
 
     try {
         // Step A: Request Access Token from MTN Sandbox
@@ -37,9 +42,9 @@ app.post('/pay', async (req, res) => {
         });
 
         if (!tokenResponse.ok) {
-            const tokenErrText = await tokenResponse.text();
-            console.error("Token Error Response:", tokenErrText);
-            throw new Error('Failed to get token from MTN Sandbox');
+            const errorBody = await tokenResponse.text();
+            console.log("MTN Token Error Response:", errorBody);
+            throw new Error(`Failed to get token from MTN Sandbox (${tokenResponse.status}: ${errorBody})`);
         }
 
         const tokenData = await tokenResponse.json();
@@ -81,7 +86,7 @@ app.post('/pay', async (req, res) => {
         }
 
     } catch (error) {
-        console.error("MoMo Error:", error);
+        console.error("MoMo Error:", error.message);
         res.status(500).json({ success: false, error: error.message });
     }
 });
